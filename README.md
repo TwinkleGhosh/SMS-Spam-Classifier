@@ -44,12 +44,10 @@ SMS-Spam-Classifier/
 ├── data/
 │   └── spam.csv
 │
-├── src/
-│   └── main.py
+├── main.py   
 │
 ├── README.md
 ├── requirements.txt
-```
 
 ---
 

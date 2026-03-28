@@ -29,9 +29,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1,2),max_features=5000)
 X_train_tfidf = vectorizer.fit_transform(X_train)
 
-# =========================
 # Model 1: Naive Bayes
-# =========================
 nb_model = MultinomialNB()
 nb_model.fit(X_train_tfidf, y_train)
 
@@ -40,10 +38,7 @@ y_pred_nb = nb_model.predict(vectorizer.transform(X_test))
 print("Naive Bayes Result:\n")
 print(classification_report(y_test, y_pred_nb))
 
-
-# =========================
 # Model 2: Logistic Regression
-# =========================
 lr_model = LogisticRegression(max_iter=1000)
 lr_model.fit(X_train_tfidf, y_train)
 
@@ -52,10 +47,7 @@ y_pred_lr = lr_model.predict(vectorizer.transform(X_test))
 print("\nLogistic Regression Result:\n")
 print(classification_report(y_test, y_pred_lr))
 
-
-# =========================
 # User Input Prediction
-# =========================
 print("\n--- SMS Spam Detector ---")
 
 while True:
