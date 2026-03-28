@@ -9,16 +9,43 @@ from sklearn.metrics import classification_report
 # Preprocessing function
 def preprocess(text):
     text = text.lower()
+    
+    # Normalize money symbols
+    text = text.replace("₹", " rupees ")
+    text = text.replace("rs", " rupees ")
+    
+    # Replace numbers
     text = re.sub(r'\d+', 'number', text)
+    
+    # Fix common spam tricks
+    text = text.replace("0", "o")
+    text = text.replace("1", "i")
+    text = text.replace("@", "a")
+    text = text.replace("$", "s")
+    text = text.replace("3", "e")
+    
+    # Remove punctuation
     text = re.sub(r'[^\w\s]', '', text)
+    
     return text
 
-# Load dataset FIRST
+# Load dataset 
 df = pd.read_csv("data/spam.csv")
 
-# Then modify df
+# Modified DF
 df["label"] = (df["label"] == "spam").astype(int)
 df["text"] = df["text"].apply(preprocess)
+
+#Custom spam keywords
+def add_flags(text):
+    spam_keywords = ["win", "won", "free", "prize", "cash", "offer", "money", "rupees"]
+    
+    for word in spam_keywords:
+        if word in text:
+            text += " spamword spamword spamword"
+    
+    return text
+df["text"] = df["text"].apply(add_flags)
 
 # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
@@ -47,6 +74,21 @@ y_pred_lr = lr_model.predict(vectorizer.transform(X_test))
 print("\nLogistic Regression Result:\n")
 print(classification_report(y_test, y_pred_lr))
 
+#Adversarial Testing 
+test_cases = [
+    "Fr33 m0ney n0w!!!",
+    "W!n c@sh pr!ze",
+    "Congratulations, you won ₹5000",
+    "FREE entry into contest!!!",
+    "Hey bro, call me later"
+]
+model = nb_model
+print("\n--- Adversarial Testing ---")
+for msg in test_cases:
+    clean = preprocess(msg)
+    pred = model.predict(vectorizer.transform([clean]))
+    print(f"{msg} --> {'Spam' if pred[0]==1 else 'Not Spam'}")
+
 # User Input Prediction
 print("\n--- SMS Spam Detector ---")
 
@@ -57,11 +99,25 @@ while True:
         print("Exiting...")
         break
 
+    # Preprocess
     clean_input = preprocess(user_input)
-    user_tfidf = vectorizer.transform([clean_input])
-    prediction = nb_model.predict(user_tfidf)
+    clean_input = add_flags(clean_input)
 
-    if prediction[0] == 1:
+    # Vectorize
+    user_tfidf = vectorizer.transform([clean_input])
+
+    # Ensemble prediction
+    nb_pred = nb_model.predict(user_tfidf)[0]
+    lr_pred = lr_model.predict(user_tfidf)[0]
+
+    final_pred = 1 if (nb_pred + lr_pred) >= 1 else 0
+
+    # Optional probability (from LR)
+    proba = lr_model.predict_proba(user_tfidf)[0][1]
+    print(f"Spam Probability: {proba:.2f}")
+
+    # Final result
+    if final_pred == 1:
         print("Result: Spam 🚫")
     else:
         print("Result: Not Spam ✅")
